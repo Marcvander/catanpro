@@ -14,11 +14,13 @@
       </div>
     </div>
 
+    <br>
+
     <div class="row">
       <div class="col-2">
         <dropdown
-          v-if="displayPlayerPick"
-          :options="players"
+          v-if="robbingPlayer || robbingPlayer === 0"
+          :options="playersWithoutRobber"
           trackBy="id"
           label="name"
           :multiple="false"
@@ -33,7 +35,10 @@
       v-for="(player, index) in players"
       :key="player.id"
     >
-      <div class="row">
+      <div 
+        v-if="player.color"
+        class="row"
+      >
         <div class="col-1">
           <div class="colorBox" :style="`background-color:${player.color}`"></div>
           <div class="inline">
@@ -71,6 +76,7 @@
           </div>
         </div>
       </div>
+      <br>
     </div>
 
     <footer>
@@ -92,7 +98,7 @@ export default {
   },
   data() {
     return {
-      displayPlayerPick: false,
+      robbingPlayer: false,
       players: [
         {
           id: 43284,
@@ -121,18 +127,6 @@ export default {
         {
           id: 39439,
           name: "Player 3",
-          color: null,
-          cards: {
-            wood: 0,
-            clay: 0,
-            sheep: 0,
-            wheat: 0,
-            ore: 0
-          }
-        },
-        {
-          id: 10120,
-          name: "Player 4",
           color: null,
           cards: {
             wood: 0,
@@ -176,30 +170,32 @@ export default {
         {
           name: "robber"
         }
-      ],
-      robberProbability: {
-        wood: 0,
-        clay: 0,
-        sheep: 0,
-        wheat: 0,
-        ore: 0
-      }
+      ]
     };
   },
   created() {
 
+  },
+  computed: {
+    playersWithoutRobber() {
+      const playersWithoutRobber = this.players.filter((player, index) => {
+        if ((index !== this.robbingPlayer) && player.color) return true;
+      })
+      return playersWithoutRobber;
+    }
   },
   methods: {
     setValue(v, number) {
       this.players[number].color = `#${v.hex}`
     },
     pickedPlayer(v) {
-      this.displayPlayerPick = false;
       const playerIndex = this.players.findIndex(player => player.id === v.id);
-      for (const cardName in this.players[playerIndex].cards) {
-        this.inflateCardCount("plus", playerIndex, cardName, this.robberProbability[cardName]);
-        this.roundTo2DecimalPlaces(playerIndex, cardName);
+      const robberProbability = this.loseFromRobber(playerIndex);
+      for (const cardName in this.players[this.robbingPlayer].cards) {
+        this.inflateCardCount("plus", this.robbingPlayer, cardName, robberProbability[cardName]);
+        this.roundTo2DecimalPlaces(this.robbingPlayer, cardName);
       }
+      this.robbingPlayer = false;
     },
     getImageSource(type, iconName) {
       return require(`../../../public/${type}/${iconName}.png`)
@@ -213,18 +209,21 @@ export default {
         if (this.players[playerIndex].cards[iconName] < 0) this.players[playerIndex].cards[iconName] = 0;
       }
       this.roundTo2DecimalPlaces(playerIndex, iconName);
+
     },
     loseFromRobber(playerIndex) {
+      const robberProbability = {};
       let playerTotalCards = 0;
       for (const cardName in this.players[playerIndex].cards) {
         playerTotalCards += this.players[playerIndex].cards[cardName];
       }
       for (const cardName in this.players[playerIndex].cards) {
         const probability = this.players[playerIndex].cards[cardName] / playerTotalCards;
-        this.robberProbability[cardName] = probability;
-        this.inflateCardCount("minus", playerIndex, cardName, probability);
+        robberProbability[cardName] = isNaN(probability) ? 0 : probability;
+        this.inflateCardCount("minus", playerIndex, cardName, robberProbability[cardName]);
         this.roundTo2DecimalPlaces(playerIndex, cardName);
       }
+      return robberProbability;
     },
     roundTo2DecimalPlaces(playerIndex, cardName) {
       this.players[playerIndex].cards[cardName] = Math.round((this.players[playerIndex].cards[cardName] + Number.EPSILON) * 100) / 100;
@@ -253,8 +252,7 @@ export default {
         this.inflateCardCount("minus", playerIndex, "ore");
       }
       if (type === "robber") {
-        this.loseFromRobber(playerIndex);
-        this.displayPlayerPick = true;
+        this.robbingPlayer = playerIndex;
       }
     }
   }
@@ -263,7 +261,7 @@ export default {
 
 <style scoped>
   .icon {
-    width: 30px;
+    width: 28px;
   }
   .colorBox {
     height: 20px;
