@@ -47,6 +47,10 @@
             name: "brown",
             hex: "90681d"
           },
+          {
+            name: "grey",
+            hex: "848484"
+          },
         ],
       }
     },
