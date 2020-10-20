@@ -1,7 +1,5 @@
 <template>
-  <div>
-    <h1>Dashboard</h1>
-
+  <div class="main">
     <div class="row">
       <div
         v-for="(player, index) in players"
@@ -17,7 +15,7 @@
     <br>
 
     <div class="row">
-      <div class="col-2">
+      <div>
         <dropdown
           v-if="robbingPlayer || robbingPlayer === 0"
           :options="playersWithoutRobber"
@@ -39,7 +37,7 @@
         v-if="player.color"
         class="row"
       >
-        <div class="col-1">
+        <div>
           <div class="colorBox" :style="`background-color:${player.color}`"></div>
           <div class="inline">
             <div
@@ -66,12 +64,20 @@
                 :alt="icon.name"
               /> 
               {{ player.cards[icon.name] }}
-              <button @click="inflateCardCount('plus', index, icon.name)">
+              <b-button 
+                variant="outline-secondary"
+                size="sm"
+                @click="inflateCardCount('plus', index, icon.name)"
+              >
                 +
-              </button>
-              <button @click="inflateCardCount('minus', index, icon.name)">
+              </b-button>
+              <b-button 
+                variant="outline-secondary"
+                size="sm"
+                @click="inflateCardCount('minus', index, icon.name)"
+              >
                 -
-              </button>
+              </b-button>
             </div>
           </div>
         </div>
@@ -81,6 +87,12 @@
 
     <footer>
       Catan Pro &copy; 2020
+      <br>
+      <img
+        :src="getImageSource('logo', 'catanpro', 'jpg')"
+        alt="Logo"
+        width="70"
+      /> 
     </footer>
   </div>
 </template>
@@ -101,7 +113,7 @@ export default {
       robbingPlayer: false,
       players: [
         {
-          id: 43284,
+          id: 1,
           name: "Player 1",
           color: null,
           cards: {
@@ -113,7 +125,7 @@ export default {
           }
         },
         {
-          id: 30030,
+          id: 2,
           name: "Player 2",
           color: null,
           cards: {
@@ -125,8 +137,20 @@ export default {
           }
         },
         {
-          id: 39439,
+          id: 3,
           name: "Player 3",
+          color: null,
+          cards: {
+            wood: 0,
+            clay: 0,
+            sheep: 0,
+            wheat: 0,
+            ore: 0
+          }
+        },
+        {
+          id: 4,
+          name: "Player 4",
           color: null,
           cards: {
             wood: 0,
@@ -197,8 +221,8 @@ export default {
       }
       this.robbingPlayer = false;
     },
-    getImageSource(type, iconName) {
-      return require(`../../../public/${type}/${iconName}.png`)
+    getImageSource(type, iconName, format = 'png') {
+      return require(`../../../public/${type}/${iconName}.${format}`)
     },
     inflateCardCount(type, playerIndex, iconName, value = 1) {
       if (type === "plus") {
@@ -260,6 +284,12 @@ export default {
 </script>
 
 <style scoped>
+  a {
+    cursor: pointer;
+  }
+  .main {
+    margin: 20px;
+  }
   .icon {
     width: 28px;
   }
