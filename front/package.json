@@ -12,7 +12,7 @@
   "bugs": {
     "url": "https://github.com/Marcvander/catanpro/issues"
   },
-  "homepage": "https://Marcvander.io/catanpro",
+  "homepage": "https://marcvander.github.io/catanpro/",
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
