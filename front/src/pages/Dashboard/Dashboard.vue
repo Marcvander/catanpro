@@ -1,5 +1,10 @@
 <template>
   <div class="main">
+
+    <div>
+      <h2>Catan Card Tracker</h2>
+    </div>
+
     <div class="row">
       <div
         v-for="(player, index) in players"
@@ -15,9 +20,9 @@
     <br>
 
     <div class="row">
-      <div>
+      <div v-if="robbingPlayer || robbingPlayer === 0">
+        <span :style="`color:${players[robbingPlayer].color}`" >Player {{ robbingPlayer + 1 }}</span> is robbing
         <dropdown
-          v-if="robbingPlayer || robbingPlayer === 0"
           :options="playersWithoutRobber"
           trackBy="id"
           label="name"
@@ -26,6 +31,23 @@
           description="Player"
           @value="pickedPlayer"
         />
+        <br>
+      </div>
+    </div>
+
+    <div class="row">
+      <div v-if="monopolyPlayer || monopolyPlayer === 0">
+        <span :style="`color:${players[monopolyPlayer].color}`" >Player {{ monopolyPlayer + 1 }}</span> is using monopoly on
+        <dropdown
+          :options="icons"
+          trackBy="name"
+          label="name"
+          :multiple="false"
+          :arrayOfStrings="false"
+          description="Ressource"
+          @value="pickedRessource"
+        />
+        <br>
       </div>
     </div>
 
@@ -78,6 +100,13 @@
               >
                 -
               </b-button>
+              <b-button
+                variant="outline-secondary"
+                size="sm"
+                @click="showModal('change-value', index, icon.name)"
+              >
+                Change
+              </b-button>
             </div>
           </div>
         </div>
@@ -85,8 +114,13 @@
       <br>
     </div>
 
+    <b-modal ref="change-value" hide-footer title="Change value">
+      <b-form-input id="newValue" type="number" v-model="ressourceValue"></b-form-input>
+      <b-button class="mt-3" variant="outline-success" @click="saveNewValue('change-value')">Save</b-button>
+    </b-modal>
+
     <footer>
-      Catan Pro &copy; 2020
+      Catan Card Tracker &copy; 2023. Developed by Marc Vanderstigel (m.vds78@gmail.com)
       <br>
       <img
         :src="getImageSource('logo', 'catanpro', 'jpg')"
@@ -111,6 +145,8 @@ export default {
   data() {
     return {
       robbingPlayer: false,
+      monopolyPlayer: false,
+      ressourceValue: 0,
       players: [
         {
           id: 1,
@@ -193,8 +229,18 @@ export default {
         },
         {
           name: "robber"
+        },
+        { 
+          name: "yearsofplenty"
+        },
+        {
+          name: "monopoly"
         }
-      ]
+      ],
+      modalValue: {
+        index: null,
+        ressource: null
+      }
     };
   },
   created() {
@@ -220,6 +266,21 @@ export default {
         this.roundTo2DecimalPlaces(this.robbingPlayer, cardName);
       }
       this.robbingPlayer = false;
+    },
+    pickedRessource(v) {
+      const ressource = v.name
+      for (let i=0; i < this.players.length; i++) {
+        const player = this.players[i]
+        if (player.id !== this.monopolyPlayer + 1) {
+          if (player.cards[ressource]) {
+            this.inflateCardCount("plus", this.monopolyPlayer, ressource, player.cards[ressource]);
+            this.roundTo2DecimalPlaces(this.monopolyPlayer, ressource);
+            this.inflateCardCount("minus", player.id - 1, ressource, player.cards[ressource]);
+            this.roundTo2DecimalPlaces(player.id - 1, ressource);
+          }
+        }
+      }
+      this.monopolyPlayer = false;
     },
     getImageSource(type, iconName, format = 'png') {
       return require(`../../../public/${type}/${iconName}.${format}`)
@@ -276,8 +337,42 @@ export default {
         this.inflateCardCount("minus", playerIndex, "ore");
       }
       if (type === "robber") {
-        this.robbingPlayer = playerIndex;
+        if (this.robbingPlayer === playerIndex) {
+          this.robbingPlayer = false
+        } else {
+          this.robbingPlayer = playerIndex
+        }
       }
+      if (type === "yearsofplenty") {
+        this.inflateCardCount("plus", playerIndex, "wood", 0.4);
+        this.inflateCardCount("plus", playerIndex, "clay", 0.4);
+        this.inflateCardCount("plus", playerIndex, "sheep", 0.4);
+        this.inflateCardCount("plus", playerIndex, "wheat", 0.4);
+        this.inflateCardCount("plus", playerIndex, "ore", 0.4);
+      }
+      if (type === "monopoly") {
+        if (this.monopolyPlayer === playerIndex) {
+          this.monopolyPlayer = false
+        } else {
+          this.monopolyPlayer = playerIndex
+        }
+      }
+    },
+    showModal(modalName, index, ressource) {
+      this.modalValue.index = index
+      this.modalValue.ressource = ressource
+      this.ressourceValue = this.players[this.modalValue.index].cards[this.modalValue.ressource]
+      this.$refs[modalName].show()
+    },
+    hideModal(modalName) {
+      this.$refs[modalName].hide()
+    },
+    saveNewValue(modalName) {
+      this.players[this.modalValue.index].cards[this.modalValue.ressource] = Number(this.ressourceValue)
+      this.modalValue.index = null
+      this.modalValue.ressource = null
+      this.ressourceValue = 0
+      this.hideModal(modalName)
     }
   }
 };

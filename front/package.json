@@ -12,12 +12,13 @@
   "bugs": {
     "url": "https://github.com/Marcvander/catanpro/issues"
   },
-  "homepage": "https://github.com/Marcvander/catanpro#readme",
+  "homepage": "https://Marcvander.io/catanpro",
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint --fix",
-    "start": "node server.js"
+    "start": "node server.js",
+    "deploy": "gh-pages -d dist"
   },
   "dependencies": {
     "bootstrap": "^4.5.2",
@@ -26,6 +27,7 @@
     "dotenv": "^8.2.0",
     "expose-loader": "^0.7.5",
     "express": "^4.17.1",
+    "gh-pages": "^5.0.0",
     "jquery": "^3.4.1",
     "node-sass": "^4.13.1",
     "sass-loader": "^8.0.2",
