@@ -6,6 +6,9 @@ module.exports = {
     disableHostCheck: false, // set to true if you wanna accept any host name
     allowedHosts: ['localhost', '.safelet.tech'],
   },
+  publicPath: process.env.NODE_ENV === 'production'
+    ? '/catanpro/'
+    : '/'
 
   // chainWebpack: config => {
   // 	// GraphQL Loader
