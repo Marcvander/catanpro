@@ -1,0 +1,28 @@
+{
+  "name": "Catan Card Tracker",
+  "version": "1.0.0",
+  "description": "Keep track of opponents cards while playing colonist.io",
+  "manifest_version": 3,
+  "author": "Marc Vanderstigel",
+  "action":{
+      "default_popup": "index.html",
+      "default_title": "Catan Card Tracker"
+  },
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://colonist.io/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://colonist.io/*"],
+      "js": ["content.js"]
+    }
+  ]
+}
