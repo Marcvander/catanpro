@@ -59,19 +59,17 @@ function sendEvents(newNode) {
     nextNode(node)
   }
 
-  console.log("firstSpan", firstSpan)
-  console.log("firstSpan.firstChild", firstSpan.firstChild)
-  console.log("firstSpan.firstChild.nodeName", firstSpan.firstChild.nodeName)
-
-  if (firstSpan.firstChild.nodeName.toLowerCase() !== 'span' || firstSpan.firstChild.nodeName.toLowerCase() !== 'img') {
+  if (firstSpan.firstChild.nodeName.toLowerCase() !== 'span' && firstSpan.firstChild.nodeName.toLowerCase() !== 'img') {
     const text = firstSpan.firstChild.textContent
-    events.push(text)
+    events.push(text.trim())
     nextNode(firstSpan.firstChild)
   } else {
     const secondSpan = firstSpan.getElementsByTagName("span")[0]
-    username = secondSpan.textContent
-    color = secondSpan.getAttribute("style").split(':')[1]
-    nextNode(secondSpan)
+    if (secondSpan) {
+      username = secondSpan.textContent
+      color = secondSpan.getAttribute("style").split(':')[1]
+      nextNode(secondSpan)
+    }
   }
 
   chrome.runtime.sendMessage({username, color, events}, function(response) {

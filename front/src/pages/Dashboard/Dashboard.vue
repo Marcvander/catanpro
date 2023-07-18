@@ -174,6 +174,7 @@ export default {
             name: "Player 1",
             color: null,
             you: false,
+            stolenValue: null,
             cards: {
               lumber: 0,
               brick: 0,
@@ -187,6 +188,7 @@ export default {
             name: "Player 2",
             color: null,
             you: false,
+            stolenValue: null,
             cards: {
               lumber: 0,
               brick: 0,
@@ -200,6 +202,7 @@ export default {
             name: "Player 3",
             color: null,
             you: false,
+            stolenValue: null,
             cards: {
               lumber: 0,
               brick: 0,
@@ -213,6 +216,7 @@ export default {
             name: "Player 4",
             color: null,
             you: false,
+            stolenValue: null,
             cards: {
               lumber: 0,
               brick: 0,
@@ -335,19 +339,20 @@ export default {
       const robbingPlayerIndex = (robbingPlayer || robbingPlayer === 0) ? robbingPlayer : this.allData.robbingPlayer
       const robberProbability = this.loseFromRobber(robbedPlayerIndex);
       for (const cardName in this.allData.players[robbingPlayerIndex].cards) {
-        this.inflateCardCount("plus", robbingPlayerIndex, cardName, robberProbability[cardName]);
+        this.inflateCardCount("plus", robbingPlayerIndex, cardName, robberProbability[cardName], 'cardStolenIn');
         this.roundTo2DecimalPlaces(robbingPlayerIndex, cardName);
       }
       this.allData.robbingPlayer = false;
     },
-    pickedRessource(v) {
-      const ressource = v.name
+    pickedRessource(v, ressourceName, monopolyUser) {
+      const ressource = ressourceName ? ressourceName : v.name
+      const monopolyPlayerIndex = monopolyUser ? monopolyUser : this.allData.monopolyPlayer
       for (let i=0; i < this.allData.players.length; i++) {
         const player = this.allData.players[i]
-        if (player.id !== this.allData.monopolyPlayer + 1) {
+        if (player.id !== monopolyPlayerIndex + 1) {
           if (player.cards[ressource]) {
-            this.inflateCardCount("plus", this.allData.monopolyPlayer, ressource, player.cards[ressource]);
-            this.roundTo2DecimalPlaces(this.allData.monopolyPlayer, ressource);
+            this.inflateCardCount("plus", monopolyPlayerIndex, ressource, player.cards[ressource]);
+            this.roundTo2DecimalPlaces(monopolyPlayerIndex, ressource);
             this.inflateCardCount("minus", player.id - 1, ressource, player.cards[ressource]);
             this.roundTo2DecimalPlaces(player.id - 1, ressource);
           }
@@ -358,7 +363,7 @@ export default {
     getImageSource(type, iconName, format = 'png') {
       return require(`../../../public/${type}/${iconName}.${format}`)
     },
-    inflateCardCount(type, playerIndex, iconName, value = 1) {
+    inflateCardCount(type, playerIndex, iconName, value = 1, stolenValue) {
       if (type === "plus") {
         this.allData.players[playerIndex].cards[iconName] += value;
       }
@@ -366,8 +371,18 @@ export default {
         this.allData.players[playerIndex].cards[iconName] -= value;
         if (this.allData.players[playerIndex].cards[iconName] < 0) this.allData.players[playerIndex].cards[iconName] = 0;
       }
-      this.roundTo2DecimalPlaces(playerIndex, iconName);
 
+      if (stolenValue) {
+        if (this.allData.players[playerIndex].stolenValue === null) {
+          this.allData.players[playerIndex].stolenValue = stolenValue
+        } else if (this.allData.players[playerIndex].stolenValue === 'never') {
+
+        } else if (this.allData.players[playerIndex].stolenValue !== stolenValue) {
+          this.allData.players[playerIndex].stolenValue = 'never'
+        }
+      }
+
+      this.roundTo2DecimalPlaces(playerIndex, iconName);
     },
     loseFromRobber(playerIndex) {
       const robberProbability = {};
@@ -378,7 +393,7 @@ export default {
       for (const cardName in this.allData.players[playerIndex].cards) {
         const probability = this.allData.players[playerIndex].cards[cardName] / playerTotalCards;
         robberProbability[cardName] = isNaN(probability) ? 0 : probability;
-        this.inflateCardCount("minus", playerIndex, cardName, robberProbability[cardName]);
+        this.inflateCardCount("minus", playerIndex, cardName, robberProbability[cardName], 'cardStolenAway');
         this.roundTo2DecimalPlaces(playerIndex, cardName);
       }
       return robberProbability;
@@ -465,6 +480,7 @@ export default {
             name: "Player 1",
             color: null,
             you: false,
+            stolenValue: null,
             cards: {
               lumber: 0,
               brick: 0,
@@ -478,6 +494,7 @@ export default {
             name: "Player 2",
             color: null,
             you: false,
+            stolenValue: null,
             cards: {
               lumber: 0,
               brick: 0,
@@ -491,6 +508,7 @@ export default {
             name: "Player 3",
             color: null,
             you: false,
+            stolenValue: null,
             cards: {
               lumber: 0,
               brick: 0,
@@ -504,6 +522,7 @@ export default {
             name: "Player 4",
             color: null,
             you: false,
+            stolenValue: null,
             cards: {
               lumber: 0,
               brick: 0,
@@ -603,11 +622,14 @@ export default {
         const index = events.indexOf('traded')
         events.splice(index, 1)
         let countingLeavingRessources = true
+        let over = false
         events.forEach(event => {
-          if (event === 'for') {
+          if (over) {
+
+          } else if (event === 'for') {
             countingLeavingRessources = false
           } else if (event === "with") {
-            return;
+            over = true
           } else {
             if (countingLeavingRessources) {
               this.inflateCardCount("minus", this.allData.playersWhoHaveBeenSetup[username].index, event, 1)
@@ -678,6 +700,67 @@ export default {
           }
         });
       }
+
+      // Year of Plenty
+      // 'Sol#5418 took from bank,wool,grain'
+      else if (events.indexOf('took from bank') >= 0) {
+        const index = events.indexOf('took from bank')
+        events.splice(index, 1)
+        events.forEach(event => {
+          this.inflateCardCount("plus", this.allData.playersWhoHaveBeenSetup[username].index, event, 1)
+        });
+      }
+
+      // Monopoly
+      // 'Sol#5418 stole 6,grain'
+      // 'stole' word is already used when robber is placed, but we delete the event so it does not work again here
+      events.forEach((event, index) => {
+        if (event.includes('stole')) {
+          const ressourceName = events[index + 1]
+          this.pickedRessource(null, ressourceName, this.allData.playersWhoHaveBeenSetup[username].index)
+        }
+      })
+
+      // check if total cards of each player is a full number
+      // if it is a decimal number, reduce back to full number
+      // because it means that after having applied statistics to stolen cards
+      // and after the user played of one the cards
+      // we know which card he does not have 
+      this.allData.players.forEach((player, index) => {
+        let totalRessources = 0
+        for (const ressource in player.cards) {
+          totalRessources = totalRessources + player.cards[ressource]
+        }
+
+        if (!Number.isInteger(totalRessources)) {
+          const cardsToRedoProbability = {}
+          for (const ressource in player.cards) {
+            if (!Number.isInteger(player.cards[ressource])) {
+              if (player.stolenValue === 'cardStolenIn') {
+                player.cards[ressource] = Math.floor(player.cards[ressource])
+              } else if (player.stolenValue === 'cardStolenAway') {
+                player.cards[ressource] = Math.ceil(player.cards[ressource])
+                cardsToRedoProbability[ressource] = player.cards[ressource]
+              }
+            }
+          }
+
+          if (player.stolenValue === 'cardStolenAway') {
+            let totalCardsToRedo = 0;
+            for (const cardName in cardsToRedoProbability) {
+              totalCardsToRedo += cardsToRedoProbability[cardName];
+            }
+            for (const cardName in cardsToRedoProbability) {
+              const probability = cardsToRedoProbability[cardName] / totalCardsToRedo;
+              const finalProbability = isNaN(probability) ? 0 : probability;
+              this.inflateCardCount("minus", index, cardName, finalProbability, 'cardStolenAway');
+              this.roundTo2DecimalPlaces(index, cardName);
+            }
+          }
+
+          if (player.stolenValue !== 'never') player.stolenValue = null
+        }
+      })
     }
   }
 };
